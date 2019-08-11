@@ -1,3 +1,10 @@
+   * [Linux 系统初始化脚本](#linux-系统初始化脚本)
+      * [脚本功能](#脚本功能)
+         * [目前本脚本仅支持CentOS6 /7 系统](#目前本脚本仅支持centos67系统)
+         * [其他功能敬请期待(佛系)](#其他功能敬请期待佛系)
+         * [欢迎大家投稿](#欢迎大家投稿)
+         * [联系邮箱：<a href="mailto:goodmoodwjl@163.com">goodmoodwjl@163.com</a>](#联系邮箱goodmoodwjl163com)
+      * [博客园地址](#博客园地址)
 # Linux 系统初始化脚本
 
 [![版本](https://img.shields.io/badge/version-3.6.0-brightgreen.svg)](https://github.com/Chuyio/ConfigLinux)
