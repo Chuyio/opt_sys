@@ -10,7 +10,7 @@
 
 ![OPdog](https://github.com/Chuyio/opt_sys/blob/master/wcy.jpg?raw=true)
 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+***
 
 ## 脚本功能
 * 配置网络
