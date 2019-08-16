@@ -15,7 +15,7 @@ echo "#========================================================="
 
 CENTOS_VERSION=`cat /etc/redhat-release | awk -F'release' '{print $2}' | awk -F'[ .]+' '{print $2}'`
 STDOUT=`>/dev/null 2>&1`
-GREEN_FONT_PREFIX="\033[46;34;5m" && PURPLE_FONT_PREFIX="\033[46;35;5m" && RED_FONT_PREFIX="\033[41;33;5m" && GREEN_BACKGROUND_PREFIX="\033[42;37m" && FONT_COLOR_SUFFIX="\033[0m"
+GREEN_FONT_PREFIX="\033[46;34m" && PURPLE_FONT_PREFIX="\033[35m" && RED_FONT_PREFIX="\033[41;33;5m" && GREEN_BACKGROUND_PREFIX="\033[42;37m" && FONT_COLOR_SUFFIX="\033[0m"
 INFO="${GREEN_FONT_PREFIX}[信息]${FONT_COLOR_SUFFIX}"
 ERROR="${RED_FONT_PREFIX}[错误]${FONT_COLOR_SUFFIX}"
 TIP="${PURPLE_FONT_PREFIX}[注意]${FONT_COLOR_SUFFIX}"
@@ -126,11 +126,11 @@ NETWORK() {
 
 HINT() {
 echo -e "
-\033[46;35;5m
+${PURPLE_FONT_PREFIX}
 [     ## Network configuration succeeded ##    ]
 [     ##### Please restart the server #####    ]
 [      CentOS 6+: server restart network       ]
-[ CentOS 7+: systemctl restart network.service ]\033[0m"
+[ CentOS 7+: systemctl restart network.service ]${FONT_COLOR_SUFFIX}"
 }
 
 C6NETWORK() {
@@ -304,6 +304,69 @@ echo "重新构建YUM仓库中稍候...如果网络不佳会造成失败"
 yum clean all
 yum makecache
 PANDUAN
+}
+
+MYSQL_REPO() {
+REPO_PATH="/etc/yum.repos.d/mysql-community.repo"
+MYSQL_INSTALL() {
+yum -y install mysql-community-server
+PANDUAN
+}
+/bin/ping -c 3 -i 0.1 -w 1 114.114.114.114 $STDOUT
+PANDUAN
+echo -e "${INFO} 网络正常"
+echo "正在执行中ing...请确保网络连接正常..."
+rpm -e $(rpm -qa | grep -E "mysql.*release") $STDOUT
+echo -e "
+${PURPLE_FONT_PREFIX}
+####################  本脚本不支持一个系统安装多个数据库  ########################
+                      也不建议使用其他方法安装多个数据库
+                  如果有多个数据库的需求,可以使用多实例来实现
+             正在检查是否已安装过MySQL,如已安装MySQL将尝试自动卸载...
+#########  注意 如果不想卸载当前数据库 请在进度条处按Ctrl+C结束脚本运行  #########${FONT_COLOR_SUFFIX}"
+sleep 10
+JDT
+for PACKAGE in $(rpm -qa | grep -i mysql)
+do
+	rpm -e $PACKAGE
+	if [ $? -eq 0 ]; then
+		echo -e "${TIP} $PACKAGE 已成功卸载..."
+	else
+		yum remove $PACKAGE
+			if [ ! $? -eq 0 ]; then
+		#yum remove $(rpm -qa | grep -i mysql)
+				echo -e "${ERROR} $PACKAGE 自动卸载失败,请手动卸载!!!"
+			fi
+	fi
+done
+rpm -Uvh https://mirrors.tuna.tsinghua.edu.cn/mysql/yum/mysql-connectors-community-el$CENTOS_VERSION/mysql-community-release-el$CENTOS_VERSION-5.noarch.rpm
+PANDUAN
+yum repolist enabled | grep "mysql.*-community.*"
+sed -i '/^#/d' $REPO_PATH
+echo -e "${TIP}以下为目前仅支持安装的MySQL版本"
+MYSQL_VER=`cat ${REPO_PATH}  | grep -E "^\[mysql5.*" | awk -F'[[-]' '{print $2}'`
+sed -i '/.*mysql56.*/,/.*mysql57.*/s/enabled=1/enabled=0/' ${REPO_PATH}
+echo -e "${PURPLE_FONT_PREFIX}
+${MYSQL_VER}${FONT_COLOR_SUFFIX}"
+echo && stty erase '^H' && read -p "请输入你要安装的MySQL版本 (55/56/57) :" NMB
+case $NMB in
+55)
+	sed -i '/.*mysql55.*/,/.*mysql56.*/s/enabled=0/enabled=1/' ${REPO_PATH}
+	MYSQL_INSTALL
+	;;
+56)
+	sed -i '/.*mysql56.*/,/.*mysql57.*/s/enabled=0/enabled=1/' ${REPO_PATH}
+	MYSQL_INSTALL
+	;;
+57)
+	echo "# INSTALL_SCRIPT #" >> ${REPO_PATH}
+	sed -i '/.*mysql57.*/,/.*INSTALL_SCRIPT.*/s/enabled=0/enabled=1/' ${REPO_PATH}
+	MYSQL_INSTALL
+	;;
+*)
+	echo -e "${ERROR} 输入信息有误,请输入正确的数字!!!"
+	;;
+esac
 }
 
 ##########################################################################
@@ -628,8 +691,9 @@ echo -e "  CentOS 初始化一键配置脚本 ${PURPLE_FONT_PREFIX}Powered By Ch
   ${GREEN_FONT_PREFIX}2.${FONT_COLOR_SUFFIX} 配置审计
   ${GREEN_FONT_PREFIX}3.${FONT_COLOR_SUFFIX} 优化系统
   ${GREEN_FONT_PREFIX}4.${FONT_COLOR_SUFFIX} 配置YUM仓库
+  ${GREEN_FONT_PREFIX}5.${FONT_COLOR_SUFFIX} 安装MySQL数据库
   "
-echo && stty erase '^H' && read -p "Please Input Number (1/2/3/4) :" NMB
+echo && stty erase '^H' && read -p "Please Input Number (1/2/3/4/5) :" NMB
 case "$NMB" in
 1)
 	NETWORK
@@ -649,6 +713,9 @@ case "$NMB" in
 	;;	
 4)
 	YUMREPO
+	;;
+5)
+	MYSQL_REPO
 	;;
 *)
 	echo -e "${ERROR} 请输入正确的数字 [1-4]"
